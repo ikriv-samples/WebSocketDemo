@@ -48,7 +48,10 @@ namespace WebSocketSrv
                 .UseStaticFiles()
                 .UseWebSockets()
                 .UseCors()
-                .UseMvcWithDefaultRoute();
+                .UseMvc(routes =>
+                {
+                    routes.MapRoute("default", "api/{controller}/{action=Index}");
+                });
         }
     }
 }

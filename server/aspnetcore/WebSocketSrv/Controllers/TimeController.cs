@@ -12,11 +12,9 @@ using Newtonsoft.Json;
 namespace WebSocketSrv.Controllers
 {
     [EnableCors("FreeForAll")]
-    [Route("api/[controller]")]
     public class TimeController : ControllerBase
     {
-        [HttpGet]
-        public async Task<string> GetResponse()
+        public async Task<string> Index()
         {
             var context = ControllerContext.HttpContext;
             if (context.WebSockets.IsWebSocketRequest)
