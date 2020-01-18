@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -17,17 +16,16 @@ namespace WebSocketSrv.Controllers
     public class TimeController : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetResponse()
+        public async Task<string> GetResponse()
         {
             var context = ControllerContext.HttpContext;
             if (context.WebSockets.IsWebSocketRequest)
             {
                 await ProcessRequest(context.WebSockets);
-                return StatusCode((int)HttpStatusCode.SwitchingProtocols);
+                return null; // by this time the socket is closed, it does not matter what we return
             }
 
-            var time = GetTime();
-            return Ok(time);
+            return GetTime();
         }
 
         private static string GetTime()
