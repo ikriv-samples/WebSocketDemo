@@ -1,0 +1,16 @@
+<h1>Angular Web Socket App</h1>
+
+<div class="formRow">
+  <label>HTTP:</label>
+  <input [(ngModel)]="httpUrl" type="text"/>
+  <button (click)="connectHttp()">HTTP Request</button>
+</div>
+<div class="formRow">
+  <label>Web socket:</label>
+  <input [(ngModel)]="wsUrl" type="text" />
+  <button (click)="connectWebSocket()">{{wsRequestButtonText}}</button>
+</div>
+
+<p *ngIf="selectedServerType">Connected to {{selectedServerType}} at {{selectedServerUrl}}</p>
+<p [ngClass]="{blueText: time && time.isFromWebSocket}">{{time.value}}</p>
+

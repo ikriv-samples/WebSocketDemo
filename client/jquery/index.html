@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Sockets Test</title>
+    <meta charset="utf-8" />
+    <script
+        src="https://code.jquery.com/jquery-3.2.1.min.js"
+        integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+    
+    <style>
+        .formRow { padding: 3px; }
+        .formRow label { display: inline-block; width: 5em; }
+        .formRow input { width: 30em;}
+        .formRow button { width: 10em; }
+    </style>
+</head>
+<body>
+    <h1>Web Sockets Test</h1>
+    <div class="formRow">
+        <label>HTTP:</label>
+        <input id="httpUrl" type="text"/>
+        <button onclick="connectHttp()">HTTP Request</button>
+    </div>
+    <div class="formRow">
+        <label>Web socket:</label>
+        <input id="wsUrl" type="text" />
+        <button id="wsRequestButton" onclick="connectWebSocket()">WS Request</button>
+    </div>
+
+    <p id="urlText"></p>
+    <p id="timeGoesHere"></p>
+<script>
+    let webSocket = null;
+
+    $(function() {
+        const url = "api/time";
+        $("#httpUrl").val(url);
+
+        const wsUrl = getWebSocketUrl(url);
+        $("#wsUrl").val(wsUrl);
+    });
+
+    function connectHttp() {
+        const url = $("#httpUrl").val();
+        $("#urlText").text("Connected to HTTP server at " + url);
+        $.ajax(url)
+            .done(function (response) {
+                const str = JSON.parse(response);
+                $("#timeGoesHere").css("color", "black");
+                $("#timeGoesHere").text(str);
+            });
+    }
+
+    function connectWebSocket() {
+        if (webSocket) {
+            disconnectWebSocket();
+            return;
+        }
+        $("#wsRequestButton").text("Disconnect");
+
+        const wsUrl = $("#wsUrl").val();
+        $("#urlText").text("Connected to web socket at " + wsUrl);
+        webSocket = new WebSocket(wsUrl);
+        webSocket.addEventListener('message',
+            function (event) {
+                const str = JSON.parse(event.data);
+                $("#timeGoesHere").css("color", "blue");
+                $("#timeGoesHere").text(str);
+            });
+    }
+
+    function disconnectWebSocket() {
+        $("#wsRequestButton").text("WS Request");
+        webSocket.close();
+        webSocket = null;
+    }
+
+    function getWebSocketUrl(relativeUrl) {
+        var location = window.location;
+        var wsProtocol = (location.protocol === "https:") ? "wss:" : "ws:";
+        var result = wsProtocol + "//" + location.host + "/" + relativeUrl;
+        return result;
+    }
+</script>
+</body>
+</html>

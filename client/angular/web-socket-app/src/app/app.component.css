@@ -1,0 +1,5 @@
+.formRow { padding: 3px; }
+.formRow label { display: inline-block; width: 5em; margin: 3px; }
+.formRow input { width: 30em; margin: 3px; }
+.formRow button { width: 10em; margin: 3px; }
+.blueText { color: blue }
