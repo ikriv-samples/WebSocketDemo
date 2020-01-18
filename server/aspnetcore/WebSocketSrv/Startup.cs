@@ -49,8 +49,6 @@ namespace WebSocketSrv
                 .UseWebSockets()
                 .UseCors()
                 .UseMvcWithDefaultRoute();
-
-            //app.Use(ProcessWebSocketConnection);
         }
     }
 }
