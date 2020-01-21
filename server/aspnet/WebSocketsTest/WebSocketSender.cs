@@ -44,7 +44,11 @@ namespace WebSocketsTest
 
         private Task CloseSocketAsync()
         {
-            return _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by server", CancellationToken.None);
+            // CloseAsync() does not work here: it throws throws InvalidOperationException
+            // "a receiver operation is already in progress".
+            // This is presumably because it tries to read the acknowledgement from the client,
+            // but we already have a reading operation in progress, initiated in ReadTask()
+            return _webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closed by server", CancellationToken.None);
         }
 
         private void QueueSend(Request request)

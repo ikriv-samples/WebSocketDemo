@@ -16,12 +16,12 @@ namespace WebSocketsTest.Controllers
     public class TimeController : ApiController
     {
         [HttpGet]
-        public HttpResponseMessage GetResponse()
+        public HttpResponseMessage GetResponse([FromUri] int ticks = 0)
         {
             var context = HttpContext.Current;
             if (context.IsWebSocketRequest)
             {
-                context.AcceptWebSocketRequest(ProcessRequest);
+                context.AcceptWebSocketRequest(c=>ProcessRequest(c, ticks));
                 return new HttpResponseMessage(HttpStatusCode.SwitchingProtocols);
             }
 
@@ -38,11 +38,16 @@ namespace WebSocketsTest.Controllers
             return timeJson;
         }
 
-        private static async Task ProcessRequest(AspNetWebSocketContext context)
+        private static async Task ProcessRequest(AspNetWebSocketContext context, int maxTicks)
         {
             var ws = context.WebSocket;
             var sender = new WebSocketSender(ws);
-            Action tickHandler = () => { sender.QueueSend(GetTime()); };
+            int ticks = 0;
+            Action tickHandler = () =>
+            {
+                sender.QueueSend(GetTime());
+                if (maxTicks != 0 && ++ticks >= maxTicks) sender.CloseAsync();
+            };
             GlobalTimer.Instance.Tick += tickHandler;
             await sender.HandleCommunicationAsync();
             GlobalTimer.Instance.Tick -= tickHandler;
