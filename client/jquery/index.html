@@ -54,7 +54,7 @@
 
     function connectWebSocket() {
         if (webSocket) {
-            disconnectWebSocket();
+            disconnectWebSocket(true);
             return;
         }
         $("#wsRequestButton").text("Disconnect");
@@ -68,11 +68,13 @@
                 $("#timeGoesHere").css("color", "blue");
                 $("#timeGoesHere").text(str);
             });
+
+        webSocket.addEventListener('close', function(event) { disconnectWebSocket(false); });
     }
 
-    function disconnectWebSocket() {
+    function disconnectWebSocket(callClose) {
         $("#wsRequestButton").text("WS Request");
-        webSocket.close();
+        if (callClose) webSocket.close();
         webSocket = null;
     }
 
