@@ -13,6 +13,7 @@
         .formRow label { display: inline-block; width: 5em; }
         .formRow input { width: 30em;}
         .formRow button { width: 10em; }
+        #statusGoesHere { color: red; }
     </style>
 </head>
 <body>
@@ -30,6 +31,7 @@
 
     <p id="urlText"></p>
     <p id="timeGoesHere"></p>
+    <p id="statusGoesHere"></p>
 <script>
     let webSocket = null;
 
@@ -45,19 +47,26 @@
         const url = $("#httpUrl").val();
         $("#urlText").text("Connected to HTTP server at " + url);
         $.ajax(url)
-            .done(function (response) {
+            .done(function(response) {
                 const str = JSON.parse(response);
-                $("#timeGoesHere").css("color", "black");
-                $("#timeGoesHere").text(str);
-            });
+                showTime(str, 'black');
+                clearStatus();
+            })
+            .fail(function (xhr) {
+                clearTime();
+                showStatus("HTTP Error " + xhr.status + ': ' + xhr.statusText);
+            })
     }
 
     function connectWebSocket() {
         if (webSocket) {
-            disconnectWebSocket(true);
+            webSocket.close();
+            onWebSocketDisconnected("Web socket closed by client");
             return;
         }
         $("#wsRequestButton").text("Disconnect");
+        clearTime();
+        clearStatus();
 
         const wsUrl = $("#wsUrl").val();
         $("#urlText").text("Connected to web socket at " + wsUrl);
@@ -65,17 +74,38 @@
         webSocket.addEventListener('message',
             function (event) {
                 const str = JSON.parse(event.data);
-                $("#timeGoesHere").css("color", "blue");
-                $("#timeGoesHere").text(str);
+                showTime(str, 'blue');
+                clearStatus();
             });
 
-        webSocket.addEventListener('close', function(event) { disconnectWebSocket(false); });
+        webSocket.addEventListener('error', function(event) {
+            onWebSocketDisconnected("Web socket error: " + event);
+        })
+
+        webSocket.addEventListener('close', function(event) { onWebSocketDisconnected("Web socket closed by server"); });
     }
 
-    function disconnectWebSocket(callClose) {
+    function onWebSocketDisconnected(status) {
         $("#wsRequestButton").text("WS Request");
-        if (callClose) webSocket.close();
+        showStatus(status);
         webSocket = null;
+    }
+
+    function showStatus(text) {
+        $("#statusGoesHere").text(text);
+    }
+
+    function clearStatus(text) {
+        showStatus('');
+    }
+
+    function showTime(time, color) {
+        $("#timeGoesHere").css("color", color);
+        $("#timeGoesHere").text(time);
+    }
+
+    function clearTime() {
+        showTime('', 'black');
     }
 
     function getWebSocketUrl(relativeUrl) {
