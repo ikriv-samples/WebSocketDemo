@@ -71,24 +71,32 @@
         const wsUrl = $("#wsUrl").val();
         $("#urlText").text("Connected to web socket at " + wsUrl);
         webSocket = new WebSocket(wsUrl);
-        webSocket.addEventListener('message',
-            function (event) {
+        webSocket.onmessage = function (event) {
                 const str = JSON.parse(event.data);
                 showTime(str, 'blue');
                 clearStatus();
-            });
+            };
 
-        webSocket.addEventListener('error', function(event) {
-            onWebSocketDisconnected("Web socket error: " + event);
-        })
+        webSocket.onerror = 
+            function(event) {
+                onWebSocketDisconnected("Web socket error: " + event);
+            };
 
-        webSocket.addEventListener('close', function(event) { onWebSocketDisconnected("Web socket closed by server"); });
+        webSocket.onclose =
+            function () { onWebSocketDisconnected("Web socket closed by server"); };
     }
 
     function onWebSocketDisconnected(status) {
         $("#wsRequestButton").text("WS Request");
         showStatus(status);
+        clearListeners(webSocket);
         webSocket = null;
+    }
+
+    function clearListeners(webSocket) {
+        webSocket.onmessage = null;
+        webSocket.onerror = null;
+        webSocket.onclose = null;
     }
 
     function showStatus(text) {
