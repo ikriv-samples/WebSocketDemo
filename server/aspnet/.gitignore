@@ -199,3 +199,5 @@ FakesAssemblies/
 
 # ASP.NET 5/vNEXT
 project.lock.json
+
+server/aspnet/WebSocketsTest/index.html
