@@ -6,12 +6,14 @@ import { FormsModule } from "@angular/forms";
 import { AppComponent } from './app.component';
 import { ServerInfoComponent } from './server-info/server-info.component';
 import { TimeViewComponent } from './time-view/time-view.component';
+import { ConnectionStatusComponent } from './connection-status/connection-status.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ServerInfoComponent,
-    TimeViewComponent
+    TimeViewComponent,
+    ConnectionStatusComponent
   ],
   imports: [
     BrowserModule,

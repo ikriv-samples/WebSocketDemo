@@ -1,1 +1,1 @@
-<p [ngClass]="{blueText: time && time.isFromWebSocket}">{{time.value}}</p>
+<p *ngIf="time" [ngClass]="{blueText: time && time.isFromWebSocket}">{{time.value}}</p>

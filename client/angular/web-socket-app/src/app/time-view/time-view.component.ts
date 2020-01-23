@@ -11,4 +11,8 @@ export class TimeViewComponent {
   setTime( value: any, isFromWebSocket: boolean ) {
     this.time = { value : value.toString(), isFromWebSocket };
   }
+
+  clearTime() {
+    this.time = null;
+  }
 }

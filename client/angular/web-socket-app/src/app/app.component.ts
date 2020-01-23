@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
 import { ServerInfoComponent } from './server-info/server-info.component';
 import { TimeViewComponent } from './time-view/time-view.component';
+import { ConnectionStatusComponent } from './connection-status/connection-status.component';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,9 @@ export class AppComponent {
   @ViewChild(TimeViewComponent)
   time : TimeViewComponent;
 
+  @ViewChild(ConnectionStatusComponent)
+  status : ConnectionStatusComponent;
+
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
@@ -37,28 +41,33 @@ export class AppComponent {
     this.http.get(this.httpUrl)
       .subscribe( 
         data => {this.time.setTime(data, false);},
-        err => { console.log("Error: " + JSON.stringify(err)); this.time = err.message; });
+        err => { this.status.setHttpStatus(err); });
   }
 
   connectWebSocket() {
     if (this.updateSocket) {
-      this.disconnectWebSocket();
+      this.onWebSocketDisconnected("Web socket closed by client");
       return;
     }
 
     this.serverInfo.setServerInfo("web socket", this.wsUrl);
     this.wsRequestButtonText = "Disconnect";
+    this.time.clearTime();
+    this.status.clearStatus();
 
     this.updateSocket = webSocket(this.wsUrl);
     this.updateSocket.subscribe( data => 
       {
-        console.log("Received web socket " + data);
         this.time.setTime(data, true);
-      });
+        this.status.clearStatus();
+      },
+      err => { this.onWebSocketDisconnected("Web socket error: " + err); },
+      () => { this.onWebSocketDisconnected("Web socket closed by server"); });
   }
 
-  disconnectWebSocket() {
+  onWebSocketDisconnected(status) {
     this.updateSocket.unsubscribe();
+    this.status.setStatus(status);
     this.updateSocket = null;
     this.wsRequestButtonText = "WS Request";
   }
