@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
 import { ServerInfoComponent } from './server-info/server-info.component';
+import { TimeViewComponent } from './time-view/time-view.component';
 
 @Component({
   selector: 'app-root',
@@ -13,11 +14,13 @@ export class AppComponent {
   httpUrl: string;
   wsUrl: string;
   wsRequestButtonText: string = "WS Request";
-  time: { value: string, isFromWebSocket : boolean };
   updateSocket: WebSocketSubject<string>;
 
   @ViewChild(ServerInfoComponent)
   serverInfo : ServerInfoComponent;
+
+  @ViewChild(TimeViewComponent)
+  time : TimeViewComponent;
 
   constructor(private http: HttpClient) {}
 
@@ -33,7 +36,7 @@ export class AppComponent {
 
     this.http.get(this.httpUrl)
       .subscribe( 
-        data => {this.time = { value: data.toString(), isFromWebSocket: false }; },
+        data => {this.time.setTime(data, false);},
         err => { console.log("Error: " + JSON.stringify(err)); this.time = err.message; });
   }
 
@@ -50,7 +53,7 @@ export class AppComponent {
     this.updateSocket.subscribe( data => 
       {
         console.log("Received web socket " + data);
-        this.time = { value: data, isFromWebSocket : true };
+        this.time.setTime(data, true);
       });
   }
 
