@@ -11,6 +11,6 @@
   <button (click)="connectWebSocket()">{{wsRequestButtonText}}</button>
 </div>
 
-<p *ngIf="selectedServerType">Connected to {{selectedServerType}} at {{selectedServerUrl}}</p>
+<app-server-info></app-server-info>
 <p [ngClass]="{blueText: time && time.isFromWebSocket}">{{time.value}}</p>
 

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket';
+import { ServerInfoComponent } from './server-info/server-info.component';
 
 @Component({
   selector: 'app-root',
@@ -13,9 +14,10 @@ export class AppComponent {
   wsUrl: string;
   wsRequestButtonText: string = "WS Request";
   time: { value: string, isFromWebSocket : boolean };
-  selectedServerType: string;
-  selectedServerUrl: string;
   updateSocket: WebSocketSubject<string>;
+
+  @ViewChild(ServerInfoComponent)
+  serverInfo : ServerInfoComponent;
 
   constructor(private http: HttpClient) {}
 
@@ -27,10 +29,9 @@ export class AppComponent {
   }
 
   connectHttp() {
-    this.selectedServerType = "HTTP server";
-    this.selectedServerUrl = this.httpUrl;
+    this.serverInfo.setServerInfo("HTTP sevrer", this.httpUrl);
 
-    this.http.get(this.selectedServerUrl)
+    this.http.get(this.httpUrl)
       .subscribe( 
         data => {this.time = { value: data.toString(), isFromWebSocket: false }; },
         err => { console.log("Error: " + JSON.stringify(err)); this.time = err.message; });
@@ -42,8 +43,7 @@ export class AppComponent {
       return;
     }
 
-    this.selectedServerType = "web socket";
-    this.selectedServerUrl = this.wsUrl;
+    this.serverInfo.setServerInfo("web socket", this.wsUrl);
     this.wsRequestButtonText = "Disconnect";
 
     this.updateSocket = webSocket(this.wsUrl);
