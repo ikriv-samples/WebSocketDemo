@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace WebSocketsTest
 {
+    /// <summary>
+    /// Sends incoming data stream to a web socket
+    /// </summary>
+    /// <remarks>Call HandleCommunicationAsync() to start working with the socket.
+    /// Call QueueSend() to schedule sending message to the socket. It will be sent after all messages before it
+    /// have been sent. Call CloseAsync() to close the socket from the server end.</remarks>
     public class WebSocketSender
     {
         private readonly WebSocket _webSocket;
@@ -19,7 +25,10 @@ namespace WebSocketsTest
             public string Data;
             public bool IsCloseRequest;
         }
-        
+
+        /// <summary>
+        /// Associate WebSocketSender with the web socket. Default encoding is UTF8
+        /// </summary>
         public WebSocketSender(WebSocket webSocket, Encoding encoding = null)
         {
             _webSocket = webSocket;
@@ -29,12 +38,35 @@ namespace WebSocketsTest
 
         public Encoding Encoding { get; }
 
+        /// <summary>
+        /// Start handling web socket communication
+        /// </summary>
+        /// <returns>The task ends when the web socket is closed by either side</returns>
+        public Task HandleCommunicationAsync()
+        {
+            if (_communicationTask != null)
+            {
+                throw new InvalidOperationException("Detected a second call to HandleCommunicationAsync(). Please call HandleCommunicationAsync() only once");
+            }
 
+            _communicationTask = Task.WhenAll(ReceiveTask(), SendTask());
+            return _communicationTask;
+        }
+
+        /// <summary>
+        /// Add message to be sent to the socket
+        /// </summary>
+        /// <remarks>Messages are sent in the order they were queued, when the socket is ready to accept them</remarks>
+        /// <param name="data"></param>
         public void QueueSend(string data)
         {
             QueueSend(new Request { Data = data });
         }
 
+        /// <summary>
+        /// Request to close the socket from the server end
+        /// </summary>
+        /// <returns>Task that is completed when the socket is closed</returns>
         public Task CloseAsync()
         {
             if (_communicationTask == null) return CloseSocketAsync();
@@ -63,27 +95,32 @@ namespace WebSocketsTest
             }
         }
 
-        public Task HandleCommunicationAsync()
+        private void QueueCloseRequestIfQueueIsEmpty()
         {
-            if (_communicationTask != null)
+            lock (_sendQueue)
             {
-                throw new InvalidOperationException("Detected a second call to HandleCommunicationAsync(). Please call HandleCommunicationAsync() only once");
+                if (_sendQueue.Count > 0) return;
+                QueueSend(new Request { IsCloseRequest = true }); // will lock again, but this is fine
             }
-
-            _communicationTask = Task.WhenAll(ReceiveTask(), SendTask());
-            return _communicationTask;
         }
 
+        // Monitors socket status and returns when the client closes the socket
         private async Task ReceiveTask()
         {
             var buffer = new ArraySegment<byte>(new byte[1024]);
             while (true)
             {
                 await _webSocket.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
-                if (_webSocket.State != WebSocketState.Open) return;
+                if (_webSocket.State != WebSocketState.Open)
+                {
+                    // client closed the socket; if the send queue is empty, wake up the write task by pushing the close request
+                    QueueCloseRequestIfQueueIsEmpty();
+                    return;
+                }
             }
         }
 
+        // Send data to the socket as it becomes available
         private async Task SendTask()
         {
             while (true)
@@ -110,10 +147,12 @@ namespace WebSocketsTest
                     _sendQueueIsNoLongerEmpty = new TaskCompletionSource<bool>();
                 }
 
+                // process queued requests one by one
                 foreach (var request in toSend)
                 {
                     if (request.IsCloseRequest)
                     {
+                        // Close the socket only if it is still open; otherwise just finish SendTask
                         if (_webSocket.State == WebSocketState.Open)
                         {
                             await CloseSocketAsync();
