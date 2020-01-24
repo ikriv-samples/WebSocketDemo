@@ -48,9 +48,16 @@ namespace WebSocketsTest.Controllers
                 sender.QueueSend(GetTime());
                 if (maxTicks != 0 && ++ticks >= maxTicks) sender.CloseAsync();
             };
+
             GlobalTimer.Instance.Tick += tickHandler;
-            await sender.HandleCommunicationAsync();
-            GlobalTimer.Instance.Tick -= tickHandler;
+            try
+            {
+                await sender.HandleCommunicationAsync();
+            }
+            finally
+            {
+                GlobalTimer.Instance.Tick -= tickHandler;
+            }
         }
     }
 }

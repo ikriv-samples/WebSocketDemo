@@ -39,17 +39,27 @@ namespace WebSocketSrv.Controllers
 
         private async Task ProcessRequest(WebSocketManager wsManager, int maxTicks)
         {
-            var ws = await wsManager.AcceptWebSocketAsync();
-            var sender = new WebSocketSender(ws);
-            int ticks = 0;
-            Action tickHandler = () =>
+            using (var ws = await wsManager.AcceptWebSocketAsync())
             {
-                sender.QueueSend(GetTime());
-                if (maxTicks != 0 && ++ticks >= maxTicks) sender.CloseAsync();
-            };
-            _timer.Tick += tickHandler;
-            await sender.HandleCommunicationAsync();
-            _timer.Tick -= tickHandler;
+                var sender = new WebSocketSender(ws);
+                int ticks = 0;
+
+                void TickHandler()
+                {
+                    sender.QueueSend(GetTime());
+                    if (maxTicks != 0 && ++ticks >= maxTicks) sender.CloseAsync();
+                }
+
+                _timer.Tick += TickHandler;
+                try
+                {
+                    await sender.HandleCommunicationAsync();
+                }
+                finally
+                {
+                    _timer.Tick -= TickHandler;
+                }
+            }
         }
     }
 }

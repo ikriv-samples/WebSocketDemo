@@ -110,10 +110,30 @@ namespace WebSocketsTest
             var buffer = new ArraySegment<byte>(new byte[1024]);
             while (true)
             {
-                await _webSocket.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                try
+                {
+                    await _webSocket.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    // Error reading from the socket
+                    // If the client just dropped the connection prematurely, we can ignore it; otherwise log
+                    bool canIgnoreException = (ex as WebSocketException)?.WebSocketErrorCode ==
+                                              WebSocketError.ConnectionClosedPrematurely;
+
+                    if (!canIgnoreException)
+                    {
+                        // log the exception; this sample just sends it to the standard output
+                        Console.WriteLine(ex);
+                    }
+                }
+
                 if (_webSocket.State != WebSocketState.Open)
                 {
-                    // client closed the socket; if the send queue is empty, wake up the write task by pushing the close request
+                    // Client closed the socket; if the send queue is empty, wake up the write task by pushing the close request
+                    // If the client closed the socket in response to the closure from our (server) side, this might be the second
+                    // close request in the queue, but that's OK, the SendTask() will quit after the first close request, and
+                    // this request will simply be ignored
                     QueueCloseRequestIfQueueIsEmpty();
                     return;
                 }
