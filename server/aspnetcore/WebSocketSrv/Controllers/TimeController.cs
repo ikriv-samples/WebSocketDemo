@@ -11,6 +11,13 @@ namespace WebSocketSrv.Controllers
     [EnableCors("FreeForAll")]
     public class TimeController : ControllerBase
     {
+        private readonly GlobalTimer _timer;
+
+        public TimeController(GlobalTimer timer)
+        {
+            _timer = timer;
+        }
+
         public async Task<string> Index([FromQuery] int ticks = 0)
         {
             var context = ControllerContext.HttpContext;
@@ -30,7 +37,7 @@ namespace WebSocketSrv.Controllers
             return timeJson;
         }
 
-        private static async Task ProcessRequest(WebSocketManager wsManager, int maxTicks)
+        private async Task ProcessRequest(WebSocketManager wsManager, int maxTicks)
         {
             var ws = await wsManager.AcceptWebSocketAsync();
             var sender = new WebSocketSender(ws);
@@ -40,9 +47,9 @@ namespace WebSocketSrv.Controllers
                 sender.QueueSend(GetTime());
                 if (maxTicks != 0 && ++ticks >= maxTicks) sender.CloseAsync();
             };
-            GlobalTimer.Instance.Tick += tickHandler;
+            _timer.Tick += tickHandler;
             await sender.HandleCommunicationAsync();
-            GlobalTimer.Instance.Tick -= tickHandler;
+            _timer.Tick -= tickHandler;
         }
     }
 }

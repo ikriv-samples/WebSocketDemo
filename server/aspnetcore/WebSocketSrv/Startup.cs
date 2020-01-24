@@ -19,10 +19,11 @@ namespace WebSocketSrv
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddSingleton<GlobalTimer, GlobalTimer>();
             ConfigureCors(services);
         }
 
-        private void ConfigureCors(IServiceCollection services)
+        private static void ConfigureCors(IServiceCollection services)
         {
             services.AddCors(options =>
             {

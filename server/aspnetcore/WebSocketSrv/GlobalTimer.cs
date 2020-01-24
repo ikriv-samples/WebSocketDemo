@@ -8,15 +8,13 @@ namespace WebSocketSrv
         // ReSharper disable once NotAccessedField.Local
         private readonly Timer _timer;
 
-        private GlobalTimer()
+        public GlobalTimer()
         {
             var now = DateTime.UtcNow;
             var delay = GetDelayToNextEvenSecond(now);
 
             _timer = new Timer(state => OnTimerTick(), null, delay, TimeSpan.Zero);
         }
-
-        public static GlobalTimer Instance = new GlobalTimer();
 
         public event Action Tick;
 
