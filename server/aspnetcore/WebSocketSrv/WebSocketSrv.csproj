@@ -1,8 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\common\WebSocketSender.cs" Link="WebSocketSender.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\..\..\client\jquery\index.html" Link="wwwroot\index.html" />

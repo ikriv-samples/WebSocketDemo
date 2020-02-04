@@ -95,6 +95,9 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\common\WebSocketSender.cs">
+      <Link>WebSocketSender.cs</Link>
+    </Compile>
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\TimeController.cs" />
     <Compile Include="Global.asax.cs">
@@ -102,7 +105,6 @@
     </Compile>
     <Compile Include="GlobalTimer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebSocketSender.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

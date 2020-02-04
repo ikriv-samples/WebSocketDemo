@@ -9,6 +9,7 @@ using System.Web.Http;
 using System.Web.Http.Cors;
 using System.Web.WebSockets;
 using Newtonsoft.Json;
+using WebSocketsDemo.Common;
 
 namespace WebSocketsTest.Controllers
 {

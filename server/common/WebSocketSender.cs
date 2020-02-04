@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace WebSocketsTest
+namespace WebSocketsDemo.Common
 {
     /// <summary>
     /// Sends incoming data stream to a web socket
