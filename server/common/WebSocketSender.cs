@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -16,8 +15,7 @@ namespace WebSocketsDemo.Common
     public class WebSocketSender
     {
         private readonly WebSocket _webSocket;
-        private readonly List<Request> _sendQueue = new List<Request>();
-        private TaskCompletionSource<bool> _sendQueueIsNoLongerEmpty;
+        private readonly AsyncQueue<Request> _sendQueue = new AsyncQueue<Request>();
         private Task _communicationTask;
 
         private struct Request
@@ -33,7 +31,6 @@ namespace WebSocketsDemo.Common
         {
             _webSocket = webSocket;
             Encoding = encoding ?? Encoding.UTF8;
-            _sendQueueIsNoLongerEmpty = new TaskCompletionSource<bool>();
         }
 
         public Encoding Encoding { get; }
@@ -60,7 +57,7 @@ namespace WebSocketsDemo.Common
         /// <param name="data"></param>
         public void QueueSend(string data)
         {
-            QueueSend(new Request { Data = data });
+            _sendQueue.Enqueue(new Request { Data = data });
         }
 
         /// <summary>
@@ -70,7 +67,7 @@ namespace WebSocketsDemo.Common
         public Task CloseAsync()
         {
             if (_communicationTask == null) return CloseSocketAsync();
-            QueueSend(new Request { IsCloseRequest = true });
+            _sendQueue.Enqueue(new Request { IsCloseRequest = true });
             return _communicationTask;
         }
 
@@ -81,27 +78,6 @@ namespace WebSocketsDemo.Common
             // This is presumably because it tries to read the acknowledgement from the client,
             // but we already have a reading operation in progress, initiated in ReadTask()
             return _webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closed by server", CancellationToken.None);
-        }
-
-        private void QueueSend(Request request)
-        {
-            lock (_sendQueue)
-            {
-                _sendQueue.Add(request);
-                if (_sendQueue.Count == 1)
-                {
-                    _sendQueueIsNoLongerEmpty?.SetResult(true);
-                }
-            }
-        }
-
-        private void QueueCloseRequestIfQueueIsEmpty()
-        {
-            lock (_sendQueue)
-            {
-                if (_sendQueue.Count > 0) return;
-                QueueSend(new Request { IsCloseRequest = true }); // will lock again, but this is fine
-            }
         }
 
         // Monitors socket status and returns when the client closes the socket
@@ -134,7 +110,7 @@ namespace WebSocketsDemo.Common
                     // If the client closed the socket in response to the closure from our (server) side, this might be the second
                     // close request in the queue, but that's OK, the SendTask() will quit after the first close request, and
                     // this request will simply be ignored
-                    QueueCloseRequestIfQueueIsEmpty();
+                    _sendQueue.EnqueueIfEmpty(new Request { IsCloseRequest =  true} );
                     return;
                 }
             }
@@ -146,28 +122,9 @@ namespace WebSocketsDemo.Common
             while (true)
             {
                 if (_webSocket.State != WebSocketState.Open) return;
-                await _sendQueueIsNoLongerEmpty.Task.ConfigureAwait(false);
+                Request[] toSend = await _sendQueue.DequeueAsync().ConfigureAwait(false);
 
-                Request[] toSend;
-
-                lock (_sendQueue)
-                {
-                    if (_sendQueue.Count == 0)
-                    {
-                        // something went very wrong
-                        throw new InvalidOperationException(
-                            "Logical error: queue should not be empty when _sendQueueIsNoLongerEmpty is finished");
-                    }
-
-                    // take all strings to send that appear before the close request (if any)
-                    toSend = _sendQueue.ToArray();
-                    _sendQueue.Clear();
-
-                    // the queue is now empty; renew "is not longer empty" task completion source, since task can be completed only once
-                    _sendQueueIsNoLongerEmpty = new TaskCompletionSource<bool>();
-                }
-
-                // process queued requests one by one
+                // process dequeued requests one by one
                 foreach (var request in toSend)
                 {
                     if (request.IsCloseRequest)

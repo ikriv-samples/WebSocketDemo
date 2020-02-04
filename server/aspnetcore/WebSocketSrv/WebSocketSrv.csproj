@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\common\AsyncQueue.cs" Link="AsyncQueue.cs" />
     <Compile Include="..\..\common\WebSocketSender.cs" Link="WebSocketSender.cs" />
   </ItemGroup>
 
